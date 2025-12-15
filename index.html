@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <title>ค้นหาสมุนไพร</title>
+  <style>
+    body{font-family:system-ui;padding:16px}
+    input{width:100%;padding:12px;font-size:16px}
+    .item{padding:12px;border:1px solid #ddd;border-radius:10px;margin-top:8px;cursor:pointer}
+    .muted{color:#666;font-size:13px}
+  </style>
+</head>
+<body>
+  <h3>ค้นหาสมุนไพร (ผลต่อ INR)</h3>
+  <input id="q" placeholder="พิมพ์ชื่อ เช่น กระเทียม / แปะก๊วย / ชาเขียว" />
+  <div id="list"></div>
+
+<script>
+const LIFF_ID = "PUT_YOUR_LIFF_ID";
+const API_BASE = "PUT_YOUR_WEBAPP_URL"; // ของคุณคือ .../exec
+
+let timer=null;
+
+async function init(){
+  await liff.init({ liffId: LIFF_ID });
+  document.getElementById("q").addEventListener("input", (e)=>{
+    clearTimeout(timer);
+    timer=setTimeout(()=>search(e.target.value.trim()), 250);
+  });
+  search("");
+}
+
+async function search(q){
+  const url = `${API_BASE}?action=search&q=${encodeURIComponent(q)}`;
+  const res = await fetch(url);
+  const json = await res.json();
+  render(json.data || []);
+}
+
+function render(items){
+  const el=document.getElementById("list");
+  el.innerHTML="";
+  items.forEach(x=>{
+    const div=document.createElement("div");
+    div.className="item";
+    div.innerHTML = `<b>${x.herb}</b> <span class="muted">(${x.code})</span>
+      <div class="muted">${x.effect} | LOE: ${x.loe}</div>`;
+    div.onclick = ()=>selectCode(x.code);
+    el.appendChild(div);
+  });
+}
+
+async function selectCode(code){
+  await liff.sendMessages([{ type:"text", text:`HERB_SELECT|${code}` }]);
+  liff.closeWindow();
+}
+
+init();
+</script>
+</body>
+</html>

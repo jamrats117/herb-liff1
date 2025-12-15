@@ -5,49 +5,216 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <title>ค้นหาสมุนไพร</title>
+
   <style>
-    :root { --pad: 14px; }
-    body { font-family: system-ui; margin: 0; padding: var(--pad); }
-    h3 { margin: 6px 0 12px; font-size: 20px; }
-    .wrap { max-width: 720px; margin: 0 auto; }
-    input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 12px 14px;
-      font-size: 16px;
-      border: 1px solid #d7d7d7;
-      border-radius: 12px;
+    :root{
+      --bg: #EBF4DD;
+      --p1: #90AB8B;
+      --p2: #5A7863;
+      --p3: #3B4953;
+
+      --card: rgba(255,255,255,.58);
+      --card2: rgba(255,255,255,.42);
+      --border: rgba(90,120,99,.25);
+      --shadow: 0 18px 40px rgba(59,73,83,.18);
+      --shadow2: 0 10px 22px rgba(59,73,83,.12);
+      --radius: 18px;
+    }
+
+    *{ box-sizing: border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      color: var(--p3);
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(144,171,139,.55), transparent 55%),
+        radial-gradient(1000px 520px at 85% 25%, rgba(90,120,99,.35), transparent 60%),
+        linear-gradient(180deg, var(--bg), #f7fbf1);
+      padding: 18px;
+    }
+
+    .wrap{ max-width: 820px; margin: 0 auto; }
+    .hero{
+      padding: 18px 18px 12px;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(255,255,255,.62), rgba(255,255,255,.35));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .title{
+      display:flex; align-items:center; gap:10px;
+      margin: 0 0 10px;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: .2px;
+      color: var(--p3);
+    }
+    .title .dot{
+      width: 12px; height: 12px; border-radius: 50%;
+      background: linear-gradient(180deg, var(--p1), var(--p2));
+      box-shadow: 0 6px 14px rgba(90,120,99,.35);
+    }
+
+    .sub{
+      margin: 0 0 14px;
+      color: rgba(59,73,83,.78);
+      font-size: 13.5px;
+      line-height: 1.45;
+    }
+
+    .searchbar{
+      display:flex; gap:10px; align-items:center;
+      padding: 10px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.55);
+      border: 1px solid rgba(90,120,99,.22);
+      box-shadow: var(--shadow2);
+    }
+
+    input{
+      width:100%;
+      border: 0;
       outline: none;
+      background: transparent;
+      padding: 10px 8px;
+      font-size: 16px;
+      color: var(--p3);
     }
-    input:focus { border-color: #999; }
-    .hint { margin: 10px 2px 0; color:#666; font-size: 13px; }
-    .status { margin: 10px 2px 0; color:#444; font-size: 14px; }
-    .list { margin-top: 10px; }
-    .item {
-      padding: 12px 12px;
-      border: 1px solid #e6e6e6;
-      border-radius: 14px;
-      margin-top: 10px;
+    input::placeholder{ color: rgba(59,73,83,.55); }
+
+    .chip{
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(144,171,139,.18);
+      border: 1px solid rgba(144,171,139,.28);
+      color: rgba(59,73,83,.9);
+      white-space: nowrap;
+    }
+
+    .status{
+      margin: 12px 2px 0;
+      font-size: 13px;
+      color: rgba(59,73,83,.74);
+    }
+
+    .list{ margin-top: 14px; }
+
+    .item{
+      padding: 14px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(90,120,99,.20);
+      background: rgba(255,255,255,.56);
+      box-shadow: 0 10px 22px rgba(59,73,83,.10);
+      backdrop-filter: blur(9px);
+      -webkit-backdrop-filter: blur(9px);
       cursor: pointer;
-      background: #fff;
+      transition: transform .08s ease, box-shadow .12s ease, border-color .12s ease;
     }
-    .title { font-weight: 700; font-size: 16px; line-height: 1.25; }
-    .meta { margin-top: 6px; color:#666; font-size: 13px; }
-    .badge { font-size: 12px; color:#666; margin-left: 6px; }
-    /* responsive */
-    @media (max-width: 420px) {
-      h3 { font-size: 18px; }
-      .item { padding: 12px 10px; }
-      .title { font-size: 15px; }
+    .item + .item{ margin-top: 10px; }
+    .item:active{ transform: scale(.995); }
+    .item:hover{ border-color: rgba(90,120,99,.32); box-shadow: 0 16px 34px rgba(59,73,83,.14); }
+
+    .row{
+      display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
+    }
+    .name{
+      font-weight: 800;
+      font-size: 16.5px;
+      line-height: 1.2;
+      color: var(--p3);
+    }
+    .code{
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(59,73,83,.08);
+      border: 1px solid rgba(59,73,83,.12);
+      color: rgba(59,73,83,.85);
+      flex: 0 0 auto;
+    }
+    .meta{
+      margin-top: 8px;
+      font-size: 13px;
+      color: rgba(59,73,83,.72);
+    }
+    .meta b{ color: rgba(59,73,83,.88); }
+
+    .footer{
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.52);
+      border: 1px solid rgba(90,120,99,.18);
+      box-shadow: var(--shadow2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .footer p{
+      margin: 0 0 10px;
+      color: rgba(59,73,83,.8);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .actions{
+      display:flex; gap:10px; flex-wrap: wrap;
+    }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(90,120,99,.25);
+      background: rgba(144,171,139,.18);
+      color: var(--p3);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 10px 20px rgba(59,73,83,.10);
+      transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
+    }
+    .btn:hover{ background: rgba(144,171,139,.24); box-shadow: 0 14px 28px rgba(59,73,83,.12); }
+    .btn:active{ transform: scale(.995); }
+    .btn.secondary{
+      background: rgba(90,120,99,.16);
+    }
+
+    /* small screens */
+    @media (max-width: 420px){
+      body{ padding: 14px; }
+      .title{ font-size: 20px; }
+      .chip{ display:none; }
     }
   </style>
 </head>
+
 <body>
 <div class="wrap">
-  <h3>ค้นหาสมุนไพร (ผลต่อ INR)</h3>
-  <input id="q" placeholder="พิมพ์อย่างน้อย 2 ตัวอักษร เช่น มะ / กระ / ชา" autocomplete="off" />
-  <div id="status" class="hint">เริ่มพิมพ์เพื่อค้นหา (อย่างน้อย 2 ตัวอักษร)</div>
-  <div id="list" class="list"></div>
+  <div class="hero">
+    <div class="title"><span class="dot"></span>ค้นหาสมุนไพร (ผลต่อ INR)</div>
+    <p class="sub">พิมพ์อย่างน้อย <b>2 ตัวอักษร</b> เพื่อค้นหา แล้วแตะรายการที่ต้องการ ระบบจะส่งชื่อสมุนไพรกลับไปในแชทอัตโนมัติ</p>
+
+    <div class="searchbar">
+      <input id="q" placeholder="เช่น มะ / กระ / ชา" autocomplete="off" />
+      <span class="chip">🔎 ค้นหาแบบทันที</span>
+    </div>
+
+    <div id="status" class="status">เริ่มพิมพ์เพื่อค้นหา (อย่างน้อย 2 ตัวอักษร)</div>
+    <div id="list" class="list"></div>
+
+    <div class="footer">
+      <p>หากไม่พบสมุนไพรที่ต้องการ กรุณาติดต่อได้ที่</p>
+      <div class="actions">
+        <!-- ✅ แก้เบอร์โทร -->
+        <a class="btn" id="btnCall" href="tel:TEL_NUMBER">📞 โทร</a>
+        <!-- ✅ แก้ลิงก์แอดไลน์ -->
+        <a class="btn secondary" id="btnLine" href="LINE_URL" target="_blank" rel="noreferrer">💬 แอดไลน์</a>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -60,14 +227,16 @@ let controller = null;
 let lastQuery = "";
 let reqSeq = 0;
 
-function setStatus(text, isHint=false){
-  const el = document.getElementById("status");
-  el.className = isHint ? "hint" : "status";
-  el.textContent = text;
+function setStatus(text){
+  document.getElementById("status").textContent = text;
 }
-
 function clearList(){
   document.getElementById("list").innerHTML = "";
+}
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[m]));
 }
 
 function render(items){
@@ -77,20 +246,16 @@ function render(items){
     const div = document.createElement("div");
     div.className = "item";
     div.innerHTML = `
-      <div class="title">${escapeHtml(x.herb)} <span class="badge">(${escapeHtml(x.code)})</span></div>
-      <div class="meta">${escapeHtml(x.effect)} | LOE: ${escapeHtml(x.loe || "-")}</div>
+      <div class="row">
+        <div class="name">${escapeHtml(x.herb)}</div>
+        <div class="code">${escapeHtml(x.code)}</div>
+      </div>
+      <div class="meta"><b>${escapeHtml(x.effect)}</b> • LOE: ${escapeHtml(x.loe || "-")}</div>
     `;
-    //div.onclick = () => selectItem(x.code);
-    div.onclick = () => selectItem(x.herb);
-
+    // ✅ ส่ง “ชื่อสมุนไพร” กลับแชท (ไม่โชว์ HERB_SELECT|...)
+    div.onclick = () => selectHerb(x.herb);
     el.appendChild(div);
   });
-}
-
-function escapeHtml(s){
-  return String(s ?? "").replace(/[&<>"']/g, m => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[m]));
 }
 
 async function init(){
@@ -100,65 +265,57 @@ async function init(){
   input.addEventListener("input", () => {
     const q = input.value.trim();
     clearTimeout(timer);
-    timer = setTimeout(() => runSearch(q), 250); // debounce
+    timer = setTimeout(() => runSearch(q), 250);
   });
 
-  // ✅ ไม่ preload รายการใหญ่ ๆ (แก้ prefill โผล่เยอะ)
   clearList();
-  setStatus("เริ่มพิมพ์เพื่อค้นหา (อย่างน้อย 2 ตัวอักษร)", true);
+  setStatus("เริ่มพิมพ์เพื่อค้นหา (อย่างน้อย 2 ตัวอักษร)");
 }
 
 async function runSearch(q){
-  // กันพิมพ์ซ้ำ
   if (q === lastQuery) return;
   lastQuery = q;
 
-  // ถ้าน้อยกว่า 2 ตัวอักษร: ไม่ยิง API
   if (!q || q.length < 2){
     if (controller) controller.abort();
     clearList();
-    setStatus("เริ่มพิมพ์เพื่อค้นหา (อย่างน้อย 2 ตัวอักษร)", true);
+    setStatus("เริ่มพิมพ์เพื่อค้นหา (อย่างน้อย 2 ตัวอักษร)");
     return;
   }
 
-  // ยกเลิก request เก่า (กันผลลัพธ์สลับ/กระพริบ)
   if (controller) controller.abort();
   controller = new AbortController();
-
   const mySeq = ++reqSeq;
-  setStatus("กำลังค้นหา...");
-  // ไม่ล้าง list ทันที เพื่อไม่ให้หน้ากระพริบ
 
+  setStatus("กำลังค้นหา...");
+
+  // ✅ ค้นหาแบบ “ชื่อสมุนไพรอย่างเดียว” (ต้องแก้ฝั่ง Apps Script ให้ _search = herb)
   const url = `${API_BASE}?action=search&q=${encodeURIComponent(q)}`;
 
-  try {
+  try{
     const res = await fetch(url, { signal: controller.signal, cache: "no-store" });
     const json = await res.json();
-
-    // ถ้าไม่ใช่ request ล่าสุด ให้ทิ้ง (กัน race condition)
     if (mySeq !== reqSeq) return;
 
     const items = json.data || [];
-    if (items.length === 0){
+    if (!items.length){
       clearList();
       setStatus("ไม่พบผลลัพธ์");
       return;
     }
-
     render(items);
     setStatus(`พบ ${items.length} รายการ`);
-  } catch (err) {
+  } catch(err){
     if (err.name === "AbortError") return;
     clearList();
     setStatus("ค้นหาไม่สำเร็จ ลองใหม่อีกครั้ง");
   }
 }
 
-async function selectItem(herb){
-  await liff.sendMessages([{ type:"text", text: herb }]); // แชทจะเห็น "มะนาว"
+async function selectHerb(herb){
+  await liff.sendMessages([{ type:"text", text: herb }]); // แชทจะเห็น “มะนาว”
   liff.closeWindow();
 }
-
 
 init();
 </script>

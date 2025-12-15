@@ -6,53 +6,153 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <title>ค้นหาสมุนไพร</title>
   <style>
-    body{font-family:system-ui;padding:16px}
-    input{width:100%;padding:12px;font-size:16px}
-    .item{padding:12px;border:1px solid #ddd;border-radius:10px;margin-top:8px;cursor:pointer}
-    .muted{color:#666;font-size:13px}
+    :root { --pad: 14px; }
+    body { font-family: system-ui; margin: 0; padding: var(--pad); }
+    h3 { margin: 6px 0 12px; font-size: 20px; }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 14px;
+      font-size: 16px;
+      border: 1px solid #d7d7d7;
+      border-radius: 12px;
+      outline: none;
+    }
+    input:focus { border-color: #999; }
+    .hint { margin: 10px 2px 0; color:#666; font-size: 13px; }
+    .status { margin: 10px 2px 0; color:#444; font-size: 14px; }
+    .list { margin-top: 10px; }
+    .item {
+      padding: 12px 12px;
+      border: 1px solid #e6e6e6;
+      border-radius: 14px;
+      margin-top: 10px;
+      cursor: pointer;
+      background: #fff;
+    }
+    .title { font-weight: 700; font-size: 16px; line-height: 1.25; }
+    .meta { margin-top: 6px; color:#666; font-size: 13px; }
+    .badge { font-size: 12px; color:#666; margin-left: 6px; }
+    /* responsive */
+    @media (max-width: 420px) {
+      h3 { font-size: 18px; }
+      .item { padding: 12px 10px; }
+      .title { font-size: 15px; }
+    }
   </style>
 </head>
 <body>
+<div class="wrap">
   <h3>ค้นหาสมุนไพร (ผลต่อ INR)</h3>
-  <input id="q" placeholder="พิมพ์ชื่อ เช่น กระเทียม / แปะก๊วย / ชาเขียว" />
-  <div id="list"></div>
+  <input id="q" placeholder="พิมพ์อย่างน้อย 2 ตัวอักษร เช่น มะ / กระ / ชา" autocomplete="off" />
+  <div id="status" class="hint">เริ่มพิมพ์เพื่อค้นหา (อย่างน้อย 2 ตัวอักษร)</div>
+  <div id="list" class="list"></div>
+</div>
 
 <script>
 const LIFF_ID = "2008700999-92JSGt6D";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwEWUXrX0Z_atDK8di4NKUjBTcGEkLK0GrrGuYFou-UjhYo1eYIDyvo1XtAHCLMGMW5Rg/exec"; // ของคุณคือ .../exec
 
-let timer=null;
+let timer = null;
+let controller = null;
+let lastQuery = "";
+let reqSeq = 0;
 
-async function init(){
-  await liff.init({ liffId: LIFF_ID });
-  document.getElementById("q").addEventListener("input", (e)=>{
-    clearTimeout(timer);
-    timer=setTimeout(()=>search(e.target.value.trim()), 250);
-  });
-  search("");
+function setStatus(text, isHint=false){
+  const el = document.getElementById("status");
+  el.className = isHint ? "hint" : "status";
+  el.textContent = text;
 }
 
-async function search(q){
-  const url = `${API_BASE}?action=search&q=${encodeURIComponent(q)}`;
-  const res = await fetch(url);
-  const json = await res.json();
-  render(json.data || []);
+function clearList(){
+  document.getElementById("list").innerHTML = "";
 }
 
 function render(items){
-  const el=document.getElementById("list");
-  el.innerHTML="";
-  items.forEach(x=>{
-    const div=document.createElement("div");
-    div.className="item";
-    div.innerHTML = `<b>${x.herb}</b> <span class="muted">(${x.code})</span>
-      <div class="muted">${x.effect} | LOE: ${x.loe}</div>`;
-    div.onclick = ()=>selectCode(x.code);
+  const el = document.getElementById("list");
+  el.innerHTML = "";
+  items.forEach(x => {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <div class="title">${escapeHtml(x.herb)} <span class="badge">(${escapeHtml(x.code)})</span></div>
+      <div class="meta">${escapeHtml(x.effect)} | LOE: ${escapeHtml(x.loe || "-")}</div>
+    `;
+    div.onclick = () => selectItem(x.code);
     el.appendChild(div);
   });
 }
 
-async function selectCode(code){
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[m]));
+}
+
+async function init(){
+  await liff.init({ liffId: LIFF_ID });
+
+  const input = document.getElementById("q");
+  input.addEventListener("input", () => {
+    const q = input.value.trim();
+    clearTimeout(timer);
+    timer = setTimeout(() => runSearch(q), 250); // debounce
+  });
+
+  // ✅ ไม่ preload รายการใหญ่ ๆ (แก้ prefill โผล่เยอะ)
+  clearList();
+  setStatus("เริ่มพิมพ์เพื่อค้นหา (อย่างน้อย 2 ตัวอักษร)", true);
+}
+
+async function runSearch(q){
+  // กันพิมพ์ซ้ำ
+  if (q === lastQuery) return;
+  lastQuery = q;
+
+  // ถ้าน้อยกว่า 2 ตัวอักษร: ไม่ยิง API
+  if (!q || q.length < 2){
+    if (controller) controller.abort();
+    clearList();
+    setStatus("เริ่มพิมพ์เพื่อค้นหา (อย่างน้อย 2 ตัวอักษร)", true);
+    return;
+  }
+
+  // ยกเลิก request เก่า (กันผลลัพธ์สลับ/กระพริบ)
+  if (controller) controller.abort();
+  controller = new AbortController();
+
+  const mySeq = ++reqSeq;
+  setStatus("กำลังค้นหา...");
+  // ไม่ล้าง list ทันที เพื่อไม่ให้หน้ากระพริบ
+
+  const url = `${API_BASE}?action=search&q=${encodeURIComponent(q)}`;
+
+  try {
+    const res = await fetch(url, { signal: controller.signal, cache: "no-store" });
+    const json = await res.json();
+
+    // ถ้าไม่ใช่ request ล่าสุด ให้ทิ้ง (กัน race condition)
+    if (mySeq !== reqSeq) return;
+
+    const items = json.data || [];
+    if (items.length === 0){
+      clearList();
+      setStatus("ไม่พบผลลัพธ์");
+      return;
+    }
+
+    render(items);
+    setStatus(`พบ ${items.length} รายการ`);
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    clearList();
+    setStatus("ค้นหาไม่สำเร็จ ลองใหม่อีกครั้ง");
+  }
+}
+
+async function selectItem(code){
+  // ส่งกลับแชทแล้วปิดหน้าต่าง
   await liff.sendMessages([{ type:"text", text:`HERB_SELECT|${code}` }]);
   liff.closeWindow();
 }

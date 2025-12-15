@@ -80,7 +80,9 @@ function render(items){
       <div class="title">${escapeHtml(x.herb)} <span class="badge">(${escapeHtml(x.code)})</span></div>
       <div class="meta">${escapeHtml(x.effect)} | LOE: ${escapeHtml(x.loe || "-")}</div>
     `;
-    div.onclick = () => selectItem(x.code);
+    //div.onclick = () => selectItem(x.code);
+    div.onclick = () => selectItem(x.herb);
+
     el.appendChild(div);
   });
 }
@@ -152,11 +154,11 @@ async function runSearch(q){
   }
 }
 
-async function selectItem(code){
-  // ส่งกลับแชทแล้วปิดหน้าต่าง
-  await liff.sendMessages([{ type:"text", text:`HERB_SELECT|${code}` }]);
+async function selectItem(herb){
+  await liff.sendMessages([{ type:"text", text: herb }]); // แชทจะเห็น "มะนาว"
   liff.closeWindow();
 }
+
 
 init();
 </script>
